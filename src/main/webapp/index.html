@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Insert title here</title>
+</head>
+<body>
+
+  <div style="display: flex;flex-direction: column;max-width: 10%;">
+    <label for="entrada">Entrada:</label>
+    <input type="time" id="entrada" name="entrada" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" required>
+  
+    <label for="saida">Saída:</label>
+    <input type="time" id="saida" name="saida" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" required>
+  </div>
+
+  <br>
+
+  <div style="display: flex;flex-direction: column;max-width: 10%;">
+    <label for="entrada-valor">Entrada (valor):</label>
+    <input type="text" id="entrada-valor" name="entrada-valor" readonly>
+  
+    <label for="saida-valor">Saída (valor):</label>
+    <input type="text" id="saida-valor" name="saida-valor" readonly>
+  </div>
+
+  <button onclick="enviarDadosParaServlet()">Enviar</button>
+
+  <script>
+    const dataEntrada = new Date();
+    const dataSaida = new Date();
+    document.getElementById('entrada').addEventListener('input', function() {
+      document.getElementById('entrada-valor').value = this.value;
+      dataEntrada.setDate(10);
+      dataSaida.setDate(10);
+      dataEntrada.setHours(this.value.split(':')[0]);
+      dataEntrada.setMinutes(this.value.split(':')[1]);
+      dataEntrada.setSeconds(0);
+      dataEntrada.setMilliseconds(0);  
+    });
+
+    document.getElementById('saida').addEventListener('input', function() {
+      document.getElementById('saida-valor').value = this.value;
+      dataEntrada.setDate(10);
+      dataSaida.setDate(10);
+      dataSaida.setHours(this.value.split(':')[0]);
+      dataSaida.setMinutes(this.value.split(':')[1]);
+      dataSaida.setSeconds(0);
+      dataSaida.setMilliseconds(0);  
+      if(dataSaida.getHours() < dataEntrada.getHours() || dataSaida.getHours() == dataEntrada.getHours() && dataSaida.getMinutes() < dataEntrada.getMinutes()) {
+        dataSaida.setDate(dataSaida.getDate() + 1);
+      }
+      console.log(dataEntrada);
+      console.log(dataSaida);
+    });
+
+    function enviarDadosParaServlet() {
+      var xhr = new XMLHttpRequest();
+      xhr.open('POST', 'calc-worktime', true);
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4 && xhr.status === 200) {
+        }
+      };
+      xhr.send('entrada=' + encodeURIComponent(dataEntrada.toISOString()) + '&saida=' + encodeURIComponent(dataSaida.toISOString()));
+    }
+  </script>
+
+</body>
+</html>
