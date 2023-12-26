@@ -1,6 +1,7 @@
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -17,19 +18,14 @@ public class WorktimeCalculatorServlet extends HttpServlet {
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        request.getRequestDispatcher("/index.html").forward(request, response);
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        String entrada = request.getParameter("entrada");
-        String saida = request.getParameter("saida");
-
-        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
-        LocalDateTime entradaLocalDateTime = LocalDateTime.parse(entrada, formatter);
-        LocalDateTime saidaLocalDateTime = LocalDateTime.parse(saida, formatter);
-
-        // Resto do código para processar os dados
-
-        response.setContentType("text/plain");
-        response.getWriter().write("Dados do calendário recebidos com sucesso!");
+    	String s = request.getParameter("entradas"); 
+    	ObjectMapper objectMapper = new ObjectMapper();
+    	JsonNode jsonNode = objectMapper.readTree(s);
+    	String property = jsonNode.get("property").asText();
+    	String direction = jsonNode.get("direction").asText();
     }
 }

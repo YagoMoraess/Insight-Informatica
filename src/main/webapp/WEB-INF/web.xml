@@ -11,12 +11,12 @@
   </welcome-file-list>
   <servlet>
     <description></description>
-    <display-name>MainServlet</display-name>
-    <servlet-name>MainServlet</servlet-name>
-    <servlet-class>MainServlet</servlet-class>
+    <display-name>WorktimeCalculatorServlet</display-name>
+    <servlet-name>WorktimeCalculatorServlet</servlet-name>
+    <servlet-class>WorktimeCalculatorServlet</servlet-class>
   </servlet>
   <servlet-mapping>
-    <servlet-name>MainServlet</servlet-name>
-    <url-pattern>/MainServlet</url-pattern>
+    <servlet-name>WorktimeCalculatorServlet</servlet-name>
+    <url-pattern>/WorktimeCalculatorServlet</url-pattern>
   </servlet-mapping>
 </web-app>
