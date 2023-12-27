@@ -4,16 +4,13 @@
   <meta charset="UTF-8">
   <title>Insight Informatica</title>
   <style>
-    .work-time-container {
+    .work-time-container, .work-done-container  {
       margin: 10px;
     }
-    .work-done-container {
+    .work-time-registers, .work-done-registers {
       margin: 10px;
     }
-    .work-time-registers {
-      margin: 10px;
-    }
-    .work-time-table {
+    .work-time-table, .work-done-table {
       display:flex;
       flex-direction: column;
       margin: 0 20px;
@@ -24,7 +21,7 @@
     .send-button {
       margin-top: 10px;
     }
-    .work-time-table-item {
+    .work-time-table-item, .work-done-table-item {
       display: flex;
       margin: 10px 0;
     }
@@ -41,77 +38,104 @@
     <div class="work-time-registers">Registros:</div>
     <div class="work-time-table" id="work-time-tables">
       <div class="work-time-table-item" id="work-time-tables-item">
-        <label for="entrada" class="input-label">Entrada:</label>
-        <input type="time" id="entrada0" name="entrada" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" required>
+        <label for="work-schedule-start" class="input-label">Entrada:</label>
+        <input type="time" id="work-schedule-start0" name="work-schedule-start" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" required>
       
-        <label for="saida" class="input-label">Saída:</label>
-        <input type="time" id="saida0" name="saida" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" required>
+        <label for="work-schedule-end" class="input-label">Saída:</label>
+        <input type="time" id="work-schedule-end0" name="work-schedule-end" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" required>
       </div>
     </div>
   </div>
   <div class="work-done-container">
     <div>Tabela-Marcações Feitas</div>
-    <div class="work-time-registers">Registros:</div>
-    <div class="work-time-table" id="work-time-tables">
-      <div class="work-time-table-item" id="work-time-tables-item">
-        <label for="entrada" class="input-label">Entrada:</label>
-        <input type="time" id="entrada0" name="entrada" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" required>
+    <div class="work-done-registers">Registros:</div>
+    <div class="work-done-table" id="work-done-tables">
+      <div class="work-done-table-item" id="work-done-tables-item">
+        <label for="work-schedule-done-start" class="input-label">Entrada:</label>
+        <input type="time" id="work-schedule-done-start0" name="work-schedule-done-start" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" required>
       
-        <label for="saida" class="input-label">Saída:</label>
-        <input type="time" id="saida0" name="saida" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" required>
+        <label for="work-schedule-done-end" class="input-label">Saída:</label>
+        <input type="time" id="work-schedule-done-end0" name="work-schedule-done-end" maxlength="5" pattern="[0-9]{2}:[0-9]{2}" required>
       </div>
     </div>
   </div>
   <div class="buttons-container">
-    <button class="send-button" onclick="adicionarCampos()">Adicionar Campo de Horário de Trabalho</button>
-    <button class="send-button" onclick="adicionarCampos()">Adicionar Campo de Marcações de Horas Trabalhadas</button>
-    <button class="send-button" onclick="enviarDadosParaServlet()">Enviar</button>
+    <button class="send-button" onclick="addWorkTimeTable()">Adicionar Campo de Horário de Trabalho</button>
+    <button class="send-button" onclick="addWorkTimeDoneTable()">Adicionar Campo de Marcações de Horas Trabalhadas</button>
+    <button class="send-button" onclick="sendToServlet()">Enviar</button>
 
   </div>
 
   <script>
-    var numberOfRegisters = 1;
-    function enviarDadosParaServlet() {
-      var entradas = [];
-      var saidas = [];
+    var numberOfWorkScheduleRegisters = 1;
+    var numberOfWorkDoneRegisters = 1;
 
-      for (var i = 0; i < numberOfRegisters; i++) {
-        var entrada = document.getElementById('entrada' + i);
-        var saida = document.getElementById('saida' + i);
+    function sendToServlet() {
+      var workScheduleStartArray = [];
+      var workScheduleEndArray = [];
+      var workDoneStartArray = [];
+      var workDoneEndArray = [];
 
-        if (entrada && saida) {
-          const entradaObj = {
+      for (var i = 0; i < numberOfWorkScheduleRegisters; i++) {
+        var start = document.getElementById('work-schedule-start' + i);
+        var end = document.getElementById('work-schedule-end' + i);
+
+        if (start && end) {
+          const startObj = {
             id: i,
-            type: 'entrada',
-            hours: entrada.value.split(':')[0],
-            minutes: entrada.value.split(':')[1]
+            type: 'start-work',
+            hours: start.value.split(':')[0],
+            minutes: start.value.split(':')[1]
           }
 
-          const saidaObj = {
+          const endObj = {
             id: i,
-            type: 'saida',
-            hours: saida.value.split(':')[0],
-            minutes: saida.value.split(':')[1]
+            type: 'end-work',
+            hours: end.value.split(':')[0],
+            minutes: end.value.split(':')[1]
           }
 
-          entradas.push(entradaObj);
-          saidas.push(saidaObj);
+          workScheduleStartArray.push(startObj);
+          workScheduleEndArray.push(endObj);
         }
       }
 
-      console.log(entradas)
-      console.log(saidas)
+      for (var i = 0; i < numberOfWorkDoneRegisters; i++) {
+        var start = document.getElementById('work-schedule-done-start' + i);
+        var end = document.getElementById('work-schedule-done-end' + i);
 
-      const formData = new FormData();
-      formData.append('entradas', JSON.stringify(entradas));
-      formData.append('saidas', JSON.stringify(saidas));
+        if (start && end) {
+          const startObj = {
+            id: i,
+            type: 'start-done',
+            hours: start.value.split(':')[0],
+            minutes: start.value.split(':')[1]
+          }
+
+          const endObj = {
+            id: i,
+            type: 'end-done',
+            hours: end.value.split(':')[0],
+            minutes: end.value.split(':')[1]
+          }
+
+          workDoneStartArray.push(startObj);
+          workDoneEndArray.push(endObj);
+        }
+      }
+
+      console.log(workScheduleStartArray, 'work');
+      console.log(workScheduleEndArray, 'work');
+      console.log(workDoneStartArray, 'done');
+      console.log(workDoneEndArray, 'done');
 
       fetch('http://localhost:8080/Projeto-Insight-Informatica/WorktimeCalculatorServlet', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
+          'Content-Type': 'application/json',
         },
-        body: formData
+        body: JSON.stringify({ workScheduleStartArray: workScheduleStartArray, workScheduleEndArray: workScheduleEndArray,
+           workDoneStartArray: workDoneStartArray, workDoneEndArray: workDoneEndArray }),
       })
       .then(response => response.text())
       .then(data => console.log(data))
@@ -120,42 +144,80 @@
       });
     }
 
-    function adicionarCampos() {
+    function addWorkTimeTable() {
       var container = document.getElementById('work-time-tables');
 
       var div = document.createElement('div');
       div.className = 'work-time-table-item';
 
-      var labelEntrada = document.createElement('label');
-      labelEntrada.className = 'input-label';
-      labelEntrada.textContent = 'Entrada:';
-      div.appendChild(labelEntrada);
+      var startLabel = document.createElement('label');
+      startLabel.className = 'input-label';
+      startLabel.textContent = 'Entrada:';
+      div.appendChild(startLabel);
 
-      var inputEntrada = document.createElement('input');
-      inputEntrada.id = 'entrada' + numberOfRegisters;
-      inputEntrada.type = 'time';
-      inputEntrada.name = 'entrada';
-      inputEntrada.maxLength = '5';
-      inputEntrada.pattern = '[0-9]{2}:[0-9]{2}';
-      inputEntrada.required = true;
-      div.appendChild(inputEntrada);
+      var startInput = document.createElement('input');
+      startInput.id = 'work-schedule-start' + numberOfWorkScheduleRegisters;
+      startInput.type = 'time';
+      startInput.name = 'work-schedule-start';
+      startInput.maxLength = '5';
+      startInput.pattern = '[0-9]{2}:[0-9]{2}';
+      startInput.required = true;
+      div.appendChild(startInput);
 
-      var labelSaida = document.createElement('label');
-      labelSaida.className = 'input-label';
-      labelSaida.textContent = 'Saída:';
-      div.appendChild(labelSaida);
+      var endLabel = document.createElement('label');
+      endLabel.className = 'input-label';
+      endLabel.textContent = 'Saída:';
+      div.appendChild(endLabel);
 
-      var inputSaida = document.createElement('input');
-      inputSaida.id = 'saida' + numberOfRegisters;
-      inputSaida.type = 'time';
-      inputSaida.name = 'saida';
-      inputSaida.maxLength = '5';
-      inputSaida.pattern = '[0-9]{2}:[0-9]{2}';
-      inputSaida.required = true;
-      div.appendChild(inputSaida);
+      var endInput = document.createElement('input');
+      endInput.id = 'work-schedule-end' + numberOfWorkScheduleRegisters;
+      endInput.type = 'time';
+      endInput.name = 'work-schedule-end';
+      endInput.maxLength = '5';
+      endInput.pattern = '[0-9]{2}:[0-9]{2}';
+      endInput.required = true;
+      div.appendChild(endInput);
 
       container.appendChild(div);
-      numberOfRegisters++;
+      numberOfWorkScheduleRegisters++;
+    }
+
+    function addWorkTimeDoneTable() {
+      var container = document.getElementById('work-done-tables');
+
+      var div = document.createElement('div');
+      div.className = 'work-done-table-item';
+	
+      var startLabel = document.createElement('label');
+      startLabel.className = 'input-label';
+      startLabel.textContent = 'Entrada:';
+      div.appendChild(startLabel);
+
+      var startInput = document.createElement('input');
+      startInput.id = 'work-schedule-done-start' + numberOfWorkDoneRegisters;
+      startInput.type = 'time';
+      startInput.name = 'work-schedule-done-start';
+      startInput.maxLength = '5';
+      startInput.pattern = '[0-9]{2}:[0-9]{2}';
+      startInput.required = true;
+      div.appendChild(startInput);
+
+      var endLabel = document.createElement('label');
+      endLabel.className = 'input-label';
+      endLabel.textContent = 'Saída:';
+      div.appendChild(endLabel);
+
+      var endInput = document.createElement('input');
+      endInput.id = 'work-schedule-done-end' + numberOfWorkDoneRegisters;
+      endInput.type = 'time';
+      endInput.name = 'work-schedule-done-end';
+      endInput.maxLength = '5';
+      endInput.pattern = '[0-9]{2}:[0-9]{2}';
+      endInput.required = true;
+      div.appendChild(endInput);
+
+      container.appendChild(div);
+      numberOfWorkDoneRegisters++;
     }
   </script>
 
