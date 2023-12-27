@@ -3,6 +3,8 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -112,8 +114,39 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                 }
             }
         }
-        
-        System.out.println("teste");
+
+        List<Map<String, Object>> resultList = new ArrayList<>();
+
+        for (int i = 0; i < workScheduleStartList.size(); i++) {
+            Map<String, Object> startSchedule = workScheduleStartList.get(i);
+            Map<String, Object> endSchedule = workScheduleEndList.get(i);
+            Map<String, Object> startDone = workDoneStartList.get(i);
+            Map<String, Object> endDone = workDoneEndList.get(i);
+
+            LocalDateTime scheduleStart = (LocalDateTime) startSchedule.get("dateTime");
+            LocalDateTime scheduleEnd = (LocalDateTime) endSchedule.get("dateTime");
+            LocalDateTime doneStart = (LocalDateTime) startDone.get("dateTime");
+            LocalDateTime doneEnd = (LocalDateTime) endDone.get("dateTime");
+
+            if (doneStart.isBefore(scheduleStart)) {
+                Map<String, Object> extraTime = new HashMap<>();
+                extraTime.put("type", "extra-time");
+                extraTime.put("result", doneStart.toString() + " - " + scheduleStart.toString());
+                resultList.add(extraTime);
+            }
+
+            if (doneEnd.isBefore(scheduleEnd)) {
+                Map<String, Object> delay = new HashMap<>();
+                delay.put("type", "delay");
+                delay.put("result", doneEnd.toString() + " - " + scheduleEnd.toString());
+                resultList.add(delay);
+            }
+        }
+
+        String jsonResult = objectMapper.writeValueAsString(resultList);
+        response.setContentType("application/json");
+        response.setCharacterEncoding("UTF-8");
+        response.getWriter().write(jsonResult);
 
     }
 }
