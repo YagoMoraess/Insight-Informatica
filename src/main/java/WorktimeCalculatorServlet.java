@@ -117,29 +117,103 @@ public class WorktimeCalculatorServlet extends HttpServlet {
 
         List<Map<String, Object>> resultList = new ArrayList<>();
 
+        int j = 0;
         for (int i = 0; i < workScheduleStartList.size(); i++) {
             Map<String, Object> startSchedule = workScheduleStartList.get(i);
             Map<String, Object> endSchedule = workScheduleEndList.get(i);
-            Map<String, Object> startDone = workDoneStartList.get(i);
-            Map<String, Object> endDone = workDoneEndList.get(i);
 
             LocalDateTime scheduleStart = (LocalDateTime) startSchedule.get("dateTime");
             LocalDateTime scheduleEnd = (LocalDateTime) endSchedule.get("dateTime");
-            LocalDateTime doneStart = (LocalDateTime) startDone.get("dateTime");
-            LocalDateTime doneEnd = (LocalDateTime) endDone.get("dateTime");
 
-            if (doneStart.isBefore(scheduleStart)) {
-                Map<String, Object> extraTime = new HashMap<>();
-                extraTime.put("type", "extra-time");
-                extraTime.put("result", doneStart.toString() + " - " + scheduleStart.toString());
-                resultList.add(extraTime);
+            while (j < workDoneStartList.size()) {
+                Map<String, Object> startDone = workDoneStartList.get(j);
+                Map<String, Object> endDone = workDoneEndList.get(j);
+
+                LocalDateTime doneStart = (LocalDateTime) startDone.get("dateTime");
+                LocalDateTime doneEnd = (LocalDateTime) endDone.get("dateTime");
+
+                if (doneStart.isBefore(scheduleStart)) {
+                    addExtraTime(resultList, doneStart, scheduleStart);
+                    doneStart = scheduleStart;
+                }
+
+                if (i < workScheduleStartList.size() - 1) {
+                    Map<String, Object> nextStartSchedule = workScheduleStartList.get(i + 1);
+                    LocalDateTime nextScheduleStart = (LocalDateTime) nextStartSchedule.get("dateTime");
+
+                    if (scheduleEnd.isBefore(nextScheduleStart)) {
+                        addExtraTime(resultList, scheduleEnd, nextScheduleStart);
+                    }
+                } else {
+                    if (doneEnd.isAfter(scheduleEnd)) {
+                        addExtraTime(resultList, scheduleEnd, doneEnd);
+                    }
+                }
+
+                j++;
             }
+        }
 
-            if (doneEnd.isBefore(scheduleEnd)) {
-                Map<String, Object> delay = new HashMap<>();
-                delay.put("type", "delay");
-                delay.put("result", doneEnd.toString() + " - " + scheduleEnd.toString());
-                resultList.add(delay);
+        j = 0;
+        for (int i = 0; i < workScheduleStartList.size(); i++) {
+            while (j < workDoneStartList.size()) {
+                Map<String, Object> startSchedule = workScheduleStartList.get(i);
+                Map<String, Object> endSchedule = workScheduleEndList.get(i);
+
+                LocalDateTime scheduleStart = (LocalDateTime) startSchedule.get("dateTime");
+                LocalDateTime scheduleEnd = (LocalDateTime) endSchedule.get("dateTime");
+                Map<String, Object> startDone = workDoneStartList.get(j);
+                Map<String, Object> endDone = workDoneEndList.get(j);
+
+                LocalDateTime doneStart = (LocalDateTime) startDone.get("dateTime");
+                LocalDateTime doneEnd = (LocalDateTime) endDone.get("dateTime");
+
+                if (doneStart.isAfter(scheduleStart)) {
+                    addDelay(resultList, scheduleStart, doneStart);
+                    doneStart = scheduleStart;
+                }
+
+                if(doneEnd.isBefore(scheduleEnd)) {
+                    addDelay(resultList, doneEnd, scheduleEnd);
+                    doneEnd = scheduleEnd;
+                }
+
+                if (i < workScheduleStartList.size() - 1) {
+                    Map<String, Object> nextStartSchedule = workScheduleStartList.get(i + 1);
+                    Map<String, Object> nextEndSchedule = workScheduleEndList.get(i + 1);
+
+                    LocalDateTime nextScheduleStart = (LocalDateTime) nextStartSchedule.get("dateTime");
+                    LocalDateTime nextScheduleEnd = (LocalDateTime) nextEndSchedule.get("dateTime");
+
+                    if(j == 0) {
+                        j++;
+                        i++;
+                        continue;
+                    }
+
+                    if(doneStart.isAfter(nextScheduleStart)) {
+                        addDelay(resultList, nextScheduleStart, doneStart);
+                        doneStart = nextScheduleStart;
+                    }
+
+                    if(doneEnd.isBefore(nextScheduleEnd)) {
+                        addDelay(resultList, doneEnd, nextScheduleEnd);
+                        doneEnd = nextScheduleEnd;
+                    }
+                }
+                j++;
+            }
+        }
+
+        if (!workScheduleEndList.isEmpty() && !workDoneEndList.isEmpty()) {
+            Map<String, Object> lastWorkScheduleEnd = workScheduleEndList.get(workScheduleEndList.size() - 1);
+            Map<String, Object> lastWorkDoneEnd = workDoneEndList.get(workDoneEndList.size() - 1);
+
+            LocalDateTime lastScheduleEndTime = (LocalDateTime) lastWorkScheduleEnd.get("dateTime");
+            LocalDateTime lastDoneEndTime = (LocalDateTime) lastWorkDoneEnd.get("dateTime");
+
+            if (lastDoneEndTime.isAfter(lastScheduleEndTime)) {
+                addExtraTime(resultList, lastScheduleEndTime, lastDoneEndTime);
             }
         }
 
@@ -147,6 +221,19 @@ public class WorktimeCalculatorServlet extends HttpServlet {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         response.getWriter().write(jsonResult);
+    }
 
+    private void addExtraTime(List<Map<String, Object>> resultList, LocalDateTime start, LocalDateTime end) {
+        Map<String, Object> extraTime = new HashMap<>();
+        extraTime.put("type", "extra-time");
+        extraTime.put("result", start.toString() + " - " + end.toString());
+        resultList.add(extraTime);
+    }
+
+    private void addDelay(List<Map<String, Object>> resultList, LocalDateTime start, LocalDateTime end) {
+        Map<String, Object> delay = new HashMap<>();
+        delay.put("type", "delay");
+        delay.put("result", start.toString() + " - " + end.toString());
+        resultList.add(delay);
     }
 }

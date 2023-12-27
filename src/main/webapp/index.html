@@ -58,7 +58,7 @@
   </div>
   <div class="work-done-container">
     <div>Tabela-Marcações Feitas</div>
-    <div class="work-done-registers">Registros:</div>
+    <div class="work-done-registers">Marcações:</div>
     <div class="work-done-table" id="work-done-tables">
       <div class="work-done-table-item" id="work-done-tables-item">
         <label for="work-schedule-done-start" class="input-label">Entrada:</label>
@@ -72,6 +72,26 @@
         <img class="clear-button" src="resources/clearInput.svg" 
           onclick="clearFields(event)" title="Limpar campo" alt="limpar-campo-img"/>
       </div>
+    </div>
+  </div>
+  <div class="work-done-container">
+    <div>
+      <div>Atraso</div>
+      <table id="Delay">
+        <tr>
+          <th></th>
+        </tr>
+      </table>
+    </div>
+  </div>
+  <div class="work-done-container">
+    <div>
+      <div>Hora extra</div>
+      <table id="Extra-time">
+        <tr>
+          <th></th>
+        </tr>
+      </table>
     </div>
   </div>
   <div class="buttons-container">
@@ -145,7 +165,30 @@
            workDoneStartArray: workDoneStartArray, workDoneEndArray: workDoneEndArray }),
       })
       .then(response => response.text())
-      .then(data => console.log(JSON.parse(data), "aqui"))
+      .then(data => {
+        const parsedData = JSON.parse(data);
+        console.log(parsedData, "aqui");
+
+        const delayTable = document.getElementById('Delay');
+        const extraTimeTable = document.getElementById('Extra-time');
+
+        delayTable.innerHTML = '';
+        extraTimeTable.innerHTML = '';
+
+        parsedData.forEach(item => {
+          if (item.type === 'delay') {
+            const row = delayTable.insertRow();
+            const cell = row.insertCell();
+            const [ , startTime, endTime] = item.result.match(/(\d{2}:\d{2}) - .*?(\d{2}:\d{2})/);
+            cell.textContent = `${startTime} - ${endTime}`;
+          } else if (item.type === 'extra-time') {
+            const row = extraTimeTable.insertRow();
+            const cell = row.insertCell();
+            const [ , startTime, endTime] = item.result.match(/(\d{2}:\d{2}) - .*?(\d{2}:\d{2})/);
+            cell.textContent = `${startTime} - ${endTime}`;
+          }
+        });
+      })
       .catch((error) => {
         console.error('Error:', error);
       });
@@ -196,18 +239,24 @@
       const addButton = document.createElement('img');
       addButton.className = 'add-button';
       addButton.src = 'resources/addInput.svg';
+      addButton.title = 'Adicionar campo';
+      addButton.alt = 'adicionar-campo-img'
       addButton.onclick = addWorkTimeTable;
       div.appendChild(addButton);
 
       const clearButton = document.createElement('img');
       clearButton.className = 'clear-button';
       clearButton.src = 'resources/clearInput.svg';
+      clearButton.title = 'Limpar campo';
+      clearButton.alt = 'limpar-campo-img'
       clearButton.onclick = clearFields;
       div.appendChild(clearButton);
 
       const deleteButton = document.createElement('img');
       deleteButton.className = 'clear-button';
       deleteButton.src = 'resources/deleteInput.svg';
+      deleteButton.title = 'Deletar campo';
+      deleteButton.alt = 'deletar-campo-img';
       deleteButton.onclick = deleteField;
       div.appendChild(deleteButton);
 
@@ -259,18 +308,24 @@
       const addButton = document.createElement('img');
       addButton.className = 'add-button-done';
       addButton.src = 'resources/addInput.svg';
+      addButton.title = 'Adicionar campo';
+      addButton.alt = 'adicionar-campo-img'
       addButton.onclick = addWorkTimeDoneTable;
       div.appendChild(addButton);
 
       const clearButton = document.createElement('img');
       clearButton.className = 'clear-button';
       clearButton.src = 'resources/clearInput.svg';
+      clearButton.title = 'Limpar campo';
+      clearButton.alt = 'limpar-campo-img'
       clearButton.onclick = clearFields;
       div.appendChild(clearButton);
 
       const deleteButton = document.createElement('img');
       deleteButton.className = 'clear-button';
       deleteButton.src = 'resources/deleteInput.svg';
+      deleteButton.title = 'Deletar campo';
+      deleteButton.alt = 'deletar-campo-img';
       deleteButton.onclick = deleteField;
       div.appendChild(deleteButton);
 
