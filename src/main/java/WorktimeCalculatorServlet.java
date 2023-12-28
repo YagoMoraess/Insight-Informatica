@@ -3,10 +3,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -118,6 +115,7 @@ public class WorktimeCalculatorServlet extends HttpServlet {
         List<Map<String, Object>> resultList = new ArrayList<>();
 
         int j = 0;
+        boolean isOvernightShift = false;
         for (int i = 0; i < workScheduleStartList.size(); i++) {
             Map<String, Object> startSchedule = workScheduleStartList.get(i);
             Map<String, Object> endSchedule = workScheduleEndList.get(i);
@@ -125,12 +123,46 @@ public class WorktimeCalculatorServlet extends HttpServlet {
             LocalDateTime scheduleStart = (LocalDateTime) startSchedule.get("dateTime");
             LocalDateTime scheduleEnd = (LocalDateTime) endSchedule.get("dateTime");
 
+            if(scheduleStart.isBefore(scheduleEnd)) {
+                isOvernightShift = true;
+            }
+
             while (j < workDoneStartList.size()) {
                 Map<String, Object> startDone = workDoneStartList.get(j);
                 Map<String, Object> endDone = workDoneEndList.get(j);
 
                 LocalDateTime doneStart = (LocalDateTime) startDone.get("dateTime");
                 LocalDateTime doneEnd = (LocalDateTime) endDone.get("dateTime");
+
+                if(isOvernightShift) {
+                    boolean isSameDayStart = doneStart.minusHours(12).isBefore(scheduleStart) && doneStart.plusHours(12).isAfter(scheduleStart);
+                    boolean isSameDayEnd = doneEnd.minusHours(12).isBefore(scheduleEnd) && doneEnd.plusHours(12).isAfter(scheduleEnd);
+                    if(!isSameDayStart) {
+                        doneStart = doneStart.plusDays(1);
+                    }
+                    if(!isSameDayEnd) {
+                        doneEnd = doneEnd.plusDays(1);
+                    }
+
+                    if (doneStart.isBefore(scheduleStart)) {
+                        addExtraTime(resultList, doneStart, scheduleStart);
+                        doneStart = scheduleStart;
+                    }
+
+                    if (i < workScheduleStartList.size() - 1) {
+                        Map<String, Object> nextStartSchedule = workScheduleStartList.get(i + 1);
+                        LocalDateTime nextScheduleStart = (LocalDateTime) nextStartSchedule.get("dateTime");
+
+                        if (scheduleEnd.isBefore(nextScheduleStart)) {
+                            addExtraTime(resultList, scheduleEnd, nextScheduleStart);
+                        }
+                    } else {
+                        if (doneEnd.isAfter(scheduleEnd)) {
+                            addExtraTime(resultList, scheduleEnd, doneEnd);
+                        }
+                    }
+                    j++;
+                }
 
                 if (doneStart.isBefore(scheduleStart)) {
                     addExtraTime(resultList, doneStart, scheduleStart);
@@ -149,12 +181,12 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                         addExtraTime(resultList, scheduleEnd, doneEnd);
                     }
                 }
-
                 j++;
             }
         }
 
         j = 0;
+        isOvernightShift = false;
         for (int i = 0; i < workScheduleStartList.size(); i++) {
             while (j < workDoneStartList.size()) {
                 Map<String, Object> startSchedule = workScheduleStartList.get(i);
@@ -167,6 +199,56 @@ public class WorktimeCalculatorServlet extends HttpServlet {
 
                 LocalDateTime doneStart = (LocalDateTime) startDone.get("dateTime");
                 LocalDateTime doneEnd = (LocalDateTime) endDone.get("dateTime");
+
+                if(scheduleStart.isBefore(scheduleEnd)) {
+                    isOvernightShift = true;
+                }
+
+                if(isOvernightShift) {
+                    boolean isSameDayStart = doneStart.minusHours(12).isBefore(scheduleStart) && doneStart.plusHours(12).isAfter(scheduleStart);
+                    boolean isSameDayEnd = doneEnd.minusHours(12).isBefore(scheduleEnd) && doneEnd.plusHours(12).isAfter(scheduleEnd);
+                    if(!isSameDayStart) {
+                        doneStart = doneStart.plusDays(1);
+                    }
+                    if(!isSameDayEnd) {
+                        doneEnd = doneEnd.plusDays(1);
+                    }
+
+                    if (doneStart.isAfter(scheduleStart)) {
+                        addDelay(resultList, scheduleStart, doneStart);
+                        doneStart = scheduleStart;
+                    }
+
+                    if(doneEnd.isBefore(scheduleEnd)) {
+                        addDelay(resultList, doneEnd, scheduleEnd);
+                        doneEnd = scheduleEnd;
+                    }
+
+                    if (i < workScheduleStartList.size() - 1) {
+                        Map<String, Object> nextStartSchedule = workScheduleStartList.get(i + 1);
+                        Map<String, Object> nextEndSchedule = workScheduleEndList.get(i + 1);
+
+                        LocalDateTime nextScheduleStart = (LocalDateTime) nextStartSchedule.get("dateTime");
+                        LocalDateTime nextScheduleEnd = (LocalDateTime) nextEndSchedule.get("dateTime");
+
+                        if(j == 0) {
+                            j++;
+                            i++;
+                            continue;
+                        }
+
+                        if(doneStart.isAfter(nextScheduleStart)) {
+                            addDelay(resultList, nextScheduleStart, doneStart);
+                            doneStart = nextScheduleStart;
+                        }
+
+                        if(doneEnd.isBefore(nextScheduleEnd)) {
+                            addDelay(resultList, doneEnd, nextScheduleEnd);
+                            doneEnd = nextScheduleEnd;
+                        }
+                    }
+                    j++;
+                }
 
                 if (doneStart.isAfter(scheduleStart)) {
                     addDelay(resultList, scheduleStart, doneStart);
@@ -217,7 +299,8 @@ public class WorktimeCalculatorServlet extends HttpServlet {
             }
         }
 
-        String jsonResult = objectMapper.writeValueAsString(resultList);
+        Set<Map<String, Object>> resultListWithoutDuplicates = new LinkedHashSet<>(resultList);
+        String jsonResult = objectMapper.writeValueAsString(resultListWithoutDuplicates);
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
         response.getWriter().write(jsonResult);
