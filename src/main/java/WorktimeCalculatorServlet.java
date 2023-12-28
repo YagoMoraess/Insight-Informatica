@@ -117,17 +117,17 @@ public class WorktimeCalculatorServlet extends HttpServlet {
         int j = 0;
         boolean isOvernightShift = false;
         for (int i = 0; i < workScheduleStartList.size(); i++) {
-            Map<String, Object> startSchedule = workScheduleStartList.get(i);
-            Map<String, Object> endSchedule = workScheduleEndList.get(i);
-
-            LocalDateTime scheduleStart = (LocalDateTime) startSchedule.get("dateTime");
-            LocalDateTime scheduleEnd = (LocalDateTime) endSchedule.get("dateTime");
-
-            if(scheduleStart.isBefore(scheduleEnd)) {
-                isOvernightShift = true;
-            }
-
             while (j < workDoneStartList.size()) {
+                Map<String, Object> startSchedule = workScheduleStartList.get(i);
+                Map<String, Object> endSchedule = workScheduleEndList.get(i);
+
+                LocalDateTime scheduleStart = (LocalDateTime) startSchedule.get("dateTime");
+                LocalDateTime scheduleEnd = (LocalDateTime) endSchedule.get("dateTime");
+
+                if(scheduleStart.getDayOfMonth() != scheduleEnd.getDayOfMonth()) {
+                    isOvernightShift = true;
+                }
+
                 Map<String, Object> startDone = workDoneStartList.get(j);
                 Map<String, Object> endDone = workDoneEndList.get(j);
 
@@ -146,42 +146,50 @@ public class WorktimeCalculatorServlet extends HttpServlet {
 
                     if (doneStart.isBefore(scheduleStart)) {
                         addExtraTime(resultList, doneStart, scheduleStart);
-                        doneStart = scheduleStart;
+                    }
+
+                    if (doneEnd.isAfter(scheduleEnd)) {
+                        addExtraTime(resultList, scheduleEnd, doneEnd);
                     }
 
                     if (i < workScheduleStartList.size() - 1) {
                         Map<String, Object> nextStartSchedule = workScheduleStartList.get(i + 1);
                         LocalDateTime nextScheduleStart = (LocalDateTime) nextStartSchedule.get("dateTime");
 
-                        if (scheduleEnd.isBefore(nextScheduleStart)) {
+                        if (nextScheduleStart.isAfter(doneStart) && nextScheduleStart.isBefore(doneEnd)) {
                             addExtraTime(resultList, scheduleEnd, nextScheduleStart);
-                        }
-                    } else {
-                        if (doneEnd.isAfter(scheduleEnd)) {
-                            addExtraTime(resultList, scheduleEnd, doneEnd);
                         }
                     }
                     j++;
+                    if (i < workScheduleStartList.size() - 1) {
+                        i++;
+                    }
+                    continue;
                 }
 
                 if (doneStart.isBefore(scheduleStart)) {
                     addExtraTime(resultList, doneStart, scheduleStart);
-                    doneStart = scheduleStart;
+                }
+
+                if (doneEnd.isAfter(scheduleEnd)) {
+                    if ((i < workDoneEndList.size() - 1)) {
+                        addExtraTime(resultList, scheduleEnd, doneEnd);
+                    }
                 }
 
                 if (i < workScheduleStartList.size() - 1) {
                     Map<String, Object> nextStartSchedule = workScheduleStartList.get(i + 1);
                     LocalDateTime nextScheduleStart = (LocalDateTime) nextStartSchedule.get("dateTime");
 
-                    if (scheduleEnd.isBefore(nextScheduleStart)) {
+                    if (nextScheduleStart.isAfter(doneStart) && nextScheduleStart.isBefore(doneEnd)) {
                         addExtraTime(resultList, scheduleEnd, nextScheduleStart);
                     }
-                } else {
-                    if (doneEnd.isAfter(scheduleEnd)) {
-                        addExtraTime(resultList, scheduleEnd, doneEnd);
-                    }
                 }
+
                 j++;
+                if (i < workScheduleStartList.size() - 1) {
+                    i++;
+                }
             }
         }
 
@@ -200,7 +208,7 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                 LocalDateTime doneStart = (LocalDateTime) startDone.get("dateTime");
                 LocalDateTime doneEnd = (LocalDateTime) endDone.get("dateTime");
 
-                if(scheduleStart.isBefore(scheduleEnd)) {
+                if(scheduleStart.getDayOfMonth() != scheduleEnd.getDayOfMonth()) {
                     isOvernightShift = true;
                 }
 
@@ -216,74 +224,42 @@ public class WorktimeCalculatorServlet extends HttpServlet {
 
                     if (doneStart.isAfter(scheduleStart)) {
                         addDelay(resultList, scheduleStart, doneStart);
-                        doneStart = scheduleStart;
                     }
 
                     if(doneEnd.isBefore(scheduleEnd)) {
                         addDelay(resultList, doneEnd, scheduleEnd);
-                        doneEnd = scheduleEnd;
                     }
 
-                    if (i < workScheduleStartList.size() - 1) {
-                        Map<String, Object> nextStartSchedule = workScheduleStartList.get(i + 1);
-                        Map<String, Object> nextEndSchedule = workScheduleEndList.get(i + 1);
-
-                        LocalDateTime nextScheduleStart = (LocalDateTime) nextStartSchedule.get("dateTime");
-                        LocalDateTime nextScheduleEnd = (LocalDateTime) nextEndSchedule.get("dateTime");
-
-                        if(j == 0) {
-                            j++;
-                            i++;
-                            continue;
-                        }
-
-                        if(doneStart.isAfter(nextScheduleStart)) {
-                            addDelay(resultList, nextScheduleStart, doneStart);
-                            doneStart = nextScheduleStart;
-                        }
-
-                        if(doneEnd.isBefore(nextScheduleEnd)) {
-                            addDelay(resultList, doneEnd, nextScheduleEnd);
-                            doneEnd = nextScheduleEnd;
-                        }
-                    }
                     j++;
+                    if (i < workScheduleStartList.size() - 1) {
+                        i++;
+                    }
+                    continue;
                 }
 
                 if (doneStart.isAfter(scheduleStart)) {
                     addDelay(resultList, scheduleStart, doneStart);
-                    doneStart = scheduleStart;
                 }
 
                 if(doneEnd.isBefore(scheduleEnd)) {
-                    addDelay(resultList, doneEnd, scheduleEnd);
-                    doneEnd = scheduleEnd;
-                }
-
-                if (i < workScheduleStartList.size() - 1) {
-                    Map<String, Object> nextStartSchedule = workScheduleStartList.get(i + 1);
-                    Map<String, Object> nextEndSchedule = workScheduleEndList.get(i + 1);
-
-                    LocalDateTime nextScheduleStart = (LocalDateTime) nextStartSchedule.get("dateTime");
-                    LocalDateTime nextScheduleEnd = (LocalDateTime) nextEndSchedule.get("dateTime");
-
-                    if(j == 0) {
-                        j++;
-                        i++;
-                        continue;
-                    }
-
-                    if(doneStart.isAfter(nextScheduleStart)) {
-                        addDelay(resultList, nextScheduleStart, doneStart);
-                        doneStart = nextScheduleStart;
-                    }
-
-                    if(doneEnd.isBefore(nextScheduleEnd)) {
-                        addDelay(resultList, doneEnd, nextScheduleEnd);
-                        doneEnd = nextScheduleEnd;
+                    if (!(i < workDoneEndList.size() - 1)) {
+                        addDelay(resultList, doneEnd, scheduleEnd);
                     }
                 }
+
+                if ((j + 1 < workDoneStartList.size())) {
+                    Map<String, Object> nextStartDone = workDoneStartList.get(j + 1);
+                    LocalDateTime nextDoneStart = (LocalDateTime) nextStartDone.get("dateTime");
+
+                    if(doneEnd.isBefore(scheduleEnd) && nextDoneStart.isBefore(scheduleEnd)) {
+                        addDelay(resultList, doneEnd, nextDoneStart);
+                    }
+                }
+
                 j++;
+                if (i < workScheduleStartList.size() - 1) {
+                    i++;
+                }
             }
         }
 
