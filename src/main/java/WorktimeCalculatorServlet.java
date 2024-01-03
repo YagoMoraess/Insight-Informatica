@@ -240,6 +240,10 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                         Map<String, Object> nextEndDone = workDoneEndList.get(j + 1);
                         LocalDateTime nextDoneEnd = (LocalDateTime) nextEndDone.get("dateTime");
 
+                        if(nextScheduleEnd.isBefore(nextDoneStart) && workScheduleStartList.size() == workDoneStartList.size()) {
+                            addExtraTime(resultList, nextDoneStart, nextDoneEnd);
+                        }
+
                         if ((i + 2 < workScheduleStartList.size())) {
                             Map<String, Object> nextNextStartSchedule = workScheduleStartList.get(i + 2);
                             LocalDateTime nextNextScheduleStart = (LocalDateTime) nextNextStartSchedule.get("dateTime");
@@ -433,7 +437,11 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                         LocalDateTime nextScheduleEnd = (LocalDateTime) nextEndSchedule.get("dateTime");
 
                         if((doneEnd.equals(nextScheduleStart) || doneEnd.isAfter(nextScheduleStart)) && (nextDoneStart.equals(nextScheduleEnd)) || nextDoneStart.isAfter(nextScheduleEnd)) {
-                            addDelay(resultList, nextScheduleStart, nextDoneStart);
+                            if(nextDoneStart.isAfter(nextScheduleEnd)) {
+                                addDelay(resultList, nextScheduleStart, nextScheduleEnd);
+                            } else {
+                                addDelay(resultList, nextScheduleStart, nextDoneStart);
+                            }
                         }
 
                         if ((i + 2 < workScheduleStartList.size())) {
