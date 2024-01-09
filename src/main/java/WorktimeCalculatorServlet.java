@@ -144,7 +144,11 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                         doneEnd = doneEnd.plusDays(1);
                     }
 
-                    if (doneStart.isBefore(scheduleStart) && doneEnd.isBefore(scheduleStart)) {
+                    if(i == 0 && j == 0 && doneStart.isBefore(scheduleStart) && doneEnd.isBefore(scheduleEnd)) {
+                        addExtraTime(resultList, doneStart, doneEnd);
+                    }
+
+                    if (doneStart.isBefore(scheduleStart) && (doneEnd.isBefore(scheduleStart) || doneEnd.equals(scheduleStart))) {
                         addExtraTime(resultList, doneStart, doneEnd);
                     }
 
@@ -152,9 +156,11 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                         addExtraTime(resultList, doneStart, scheduleStart);
                     }
 
-                    if (doneEnd.isAfter(scheduleEnd)) {
-                        if ((i < workDoneEndList.size() - 1)) {
+                    if(!(i < workScheduleStartList.size() - 1) && doneEnd.isAfter(scheduleEnd)) {
+                        if(doneStart.isBefore(scheduleEnd)) {
                             addExtraTime(resultList, scheduleEnd, doneEnd);
+                        } else {
+                            addExtraTime(resultList, doneStart, doneEnd);
                         }
                     }
 
@@ -175,9 +181,13 @@ public class WorktimeCalculatorServlet extends HttpServlet {
 
                             Map<String, Object> nextEndDone = workDoneEndList.get(j + 1);
                             LocalDateTime nextDoneEnd = (LocalDateTime) nextEndDone.get("dateTime");
-                            
+
                             if(nextScheduleEnd.isBefore(nextDoneStart) && workScheduleStartList.size() == workDoneStartList.size()) {
-                            	addExtraTime(resultList, nextDoneStart, nextDoneEnd);
+                                addExtraTime(resultList, nextDoneStart, nextDoneEnd);
+                            }
+
+                            if(nextDoneEnd.isAfter(nextScheduleEnd)) {
+                                addExtraTime(resultList, nextScheduleEnd, nextDoneEnd);
                             }
 
                             if ((i + 2 < workScheduleStartList.size())) {
@@ -195,31 +205,35 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                                 Map<String, Object> nextNextStartSchedule = workScheduleStartList.get(i + 2);
                                 LocalDateTime nextNextScheduleStart = (LocalDateTime) nextNextStartSchedule.get("dateTime");
                                 addExtraTime(resultList, nextScheduleEnd, nextNextScheduleStart);
-                            } else {
-                                addExtraTime(resultList, nextScheduleEnd, nextScheduleStart);
                             }
                         }
                     }
 
                     j++;
-                    if (i < workScheduleStartList.size() - 1) {
+                    if (i < workScheduleStartList.size() - 1 && doneStart.isAfter(scheduleStart)) {
                         i++;
                     }
                     continue;
                 }
+                
+                if(i == 0 && j == 0 && doneStart.isBefore(scheduleStart) && doneEnd.isBefore(scheduleEnd)) {
+                	addExtraTime(resultList, doneStart, doneEnd);
+                }
 
-                if (doneStart.isBefore(scheduleStart) && doneEnd.isBefore(scheduleStart)) {
+                if (doneStart.isBefore(scheduleStart) && (doneEnd.isBefore(scheduleStart) || doneEnd.equals(scheduleStart))) {
                     addExtraTime(resultList, doneStart, doneEnd);
                 }
                 
                 if (doneStart.isBefore(scheduleStart) && doneEnd.isAfter(scheduleStart)) {
                     addExtraTime(resultList, doneStart, scheduleStart);
                 }
-
-                if (doneEnd.isAfter(scheduleEnd)) {
-                    if ((i < workDoneEndList.size() - 1)) {
-                        addExtraTime(resultList, scheduleEnd, doneEnd);
-                    }
+                
+                if(!(i < workScheduleStartList.size() - 1) && doneEnd.isAfter(scheduleEnd)) {
+                	if(doneStart.isBefore(scheduleEnd)) {
+                		addExtraTime(resultList, scheduleEnd, doneEnd);
+                	} else {
+                		addExtraTime(resultList, doneStart, doneEnd);
+                	}
                 }
 
                 if (i < workScheduleStartList.size() - 1) {
@@ -243,6 +257,10 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                         if(nextScheduleEnd.isBefore(nextDoneStart) && workScheduleStartList.size() == workDoneStartList.size()) {
                             addExtraTime(resultList, nextDoneStart, nextDoneEnd);
                         }
+                        
+                        if(nextDoneEnd.isAfter(nextScheduleEnd)) {
+                        	addExtraTime(resultList, nextScheduleEnd, nextDoneEnd);
+                        }
 
                         if ((i + 2 < workScheduleStartList.size())) {
                             Map<String, Object> nextNextStartSchedule = workScheduleStartList.get(i + 2);
@@ -259,14 +277,12 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                             Map<String, Object> nextNextStartSchedule = workScheduleStartList.get(i + 2);
                             LocalDateTime nextNextScheduleStart = (LocalDateTime) nextNextStartSchedule.get("dateTime");
                             addExtraTime(resultList, nextScheduleEnd, nextNextScheduleStart);
-                        } else {
-                            addExtraTime(resultList, nextScheduleEnd, nextScheduleStart);
                         }
                     }
                 }
 
                 j++;
-                if (i < workScheduleStartList.size() - 1) {
+                if (i < workScheduleStartList.size() - 1 && doneStart.isAfter(scheduleStart)) {
                     i++;
                 }
             }
@@ -315,6 +331,18 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                         addDelay(resultList, doneEnd, scheduleEnd);
                     }
 
+                    if (i < workScheduleStartList.size() - 1) {
+                        Map<String, Object> nextStartSchedule = workScheduleStartList.get(i + 1);
+                        LocalDateTime nextScheduleStart = (LocalDateTime) nextStartSchedule.get("dateTime");
+
+                        Map<String, Object> nextEndSchedule = workScheduleEndList.get(i + 1);
+                        LocalDateTime nextScheduleEnd = (LocalDateTime) nextEndSchedule.get("dateTime");
+
+                        if(doneEnd.isBefore(nextScheduleStart) && !(j + 1 < workDoneStartList.size())) {
+                            addDelay(resultList, nextScheduleStart, nextScheduleEnd);
+                        }
+                    }
+
                     if ((j + 1 < workDoneStartList.size())) {
                         Map<String, Object> nextStartDone = workDoneStartList.get(j + 1);
                         LocalDateTime nextDoneStart = (LocalDateTime) nextStartDone.get("dateTime");
@@ -326,7 +354,7 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                             addDelay(resultList, doneEnd, nextDoneStart);
                         }
 
-                        if(doneEnd.isBefore(scheduleStart) && nextDoneStart.isBefore(scheduleStart)) {
+                        if(doneEnd.isBefore(scheduleStart) && nextDoneStart.isBefore(scheduleStart) && !(j + 1 < workDoneStartList.size())) {
                             addDelay(resultList, scheduleStart, scheduleEnd);
                         }
 
@@ -338,7 +366,7 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                             addDelay(resultList, scheduleStart, scheduleEnd);
                         }
 
-                        if(doneEnd.isBefore(scheduleEnd) && nextDoneStart.equals(scheduleEnd)) {
+                        if(doneEnd.isBefore(scheduleEnd) && (doneEnd.isAfter(scheduleStart) || doneEnd.equals(scheduleStart)) && nextDoneStart.equals(scheduleEnd)) {
                             addDelay(resultList, doneEnd, scheduleEnd);
                         }
 
@@ -350,11 +378,19 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                             LocalDateTime nextScheduleEnd = (LocalDateTime) nextEndSchedule.get("dateTime");
 
                             if((doneEnd.equals(nextScheduleStart) || doneEnd.isAfter(nextScheduleStart)) && (nextDoneStart.equals(nextScheduleEnd)) || nextDoneStart.isAfter(nextScheduleEnd)) {
-                            	if(nextDoneStart.isAfter(nextScheduleEnd)) {
-                            		addDelay(resultList, nextScheduleStart, nextScheduleEnd);
-                            	} else {
-                            		addDelay(resultList, nextScheduleStart, nextDoneStart);
-                            	}
+                                if(nextDoneStart.isAfter(nextScheduleEnd)) {
+                                    addDelay(resultList, nextScheduleStart, nextScheduleEnd);
+                                } else {
+                                    addDelay(resultList, nextScheduleStart, nextDoneStart);
+                                }
+                            }
+
+                            if(nextScheduleStart.isBefore(nextDoneStart) && nextScheduleStart.isAfter(doneEnd)) {
+                                addDelay(resultList, nextScheduleStart, nextDoneStart);
+                            }
+
+                            if(doneEnd.isBefore(nextScheduleEnd) && nextDoneStart.isBefore(nextScheduleEnd) && doneEnd.isAfter(nextScheduleStart)) {
+                                addDelay(resultList, doneEnd, nextDoneStart);
                             }
 
                             if ((i + 2 < workScheduleStartList.size())) {
@@ -367,6 +403,10 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                                 if(nextNextScheduleStart.equals(nextDoneEnd)) {
                                     addDelay(resultList, nextDoneEnd, nextNextScheduleEnd);
                                 }
+
+                                if(nextDoneStart.isAfter(nextNextScheduleStart)) {
+                                    addDelay(resultList, nextNextScheduleStart, nextDoneStart);
+                                }
                             }
                         }
 
@@ -374,7 +414,9 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                             if ((j + 2 < workDoneStartList.size())) {
                                 Map<String, Object> nextNextStartDone = workDoneStartList.get(j + 2);
                                 LocalDateTime nextNextDoneStart = (LocalDateTime) nextNextStartDone.get("dateTime");
-                                addDelay(resultList, nextDoneEnd, nextNextDoneStart);
+                                if(nextNextDoneStart.isBefore(scheduleEnd) && nextNextDoneStart.isAfter(scheduleStart)) {
+                                    addDelay(resultList, nextDoneEnd, nextNextDoneStart);
+                                }
                             } else {
                                 addDelay(resultList, nextDoneEnd, nextDoneStart);
                             }
@@ -382,7 +424,7 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                     }
 
                     j++;
-                    if (i < workScheduleStartList.size() - 1) {
+                    if (i < workScheduleStartList.size() - 1 && (doneEnd.isAfter(scheduleEnd) || doneEnd.equals(scheduleEnd))) {
                         i++;
                     }
                     continue;
@@ -401,6 +443,18 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                 if(doneEnd.isBefore(scheduleEnd) && doneEnd.isAfter(scheduleStart) && workDoneStartList.size() == workScheduleStartList.size()) {
                 	addDelay(resultList, doneEnd, scheduleEnd);
                 }
+                
+                if (i < workScheduleStartList.size() - 1) {
+                    Map<String, Object> nextStartSchedule = workScheduleStartList.get(i + 1);
+                    LocalDateTime nextScheduleStart = (LocalDateTime) nextStartSchedule.get("dateTime");
+                    
+                    Map<String, Object> nextEndSchedule = workScheduleEndList.get(i + 1);
+                    LocalDateTime nextScheduleEnd = (LocalDateTime) nextEndSchedule.get("dateTime");
+                    
+                    if(doneEnd.isBefore(nextScheduleStart) && !(j + 1 < workDoneStartList.size())) {
+                    	addDelay(resultList, nextScheduleStart, nextScheduleEnd);
+                    }
+                }
 
                 if ((j + 1 < workDoneStartList.size())) {
                     Map<String, Object> nextStartDone = workDoneStartList.get(j + 1);
@@ -413,7 +467,7 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                     	addDelay(resultList, doneEnd, nextDoneStart);
                     }
                     
-                    if(doneEnd.isBefore(scheduleStart) && nextDoneStart.isBefore(scheduleStart)) {
+                    if(doneEnd.isBefore(scheduleStart) && nextDoneStart.isBefore(scheduleStart) && !(j + 1 < workDoneStartList.size())) {
                     	addDelay(resultList, scheduleStart, scheduleEnd);
                     }
                     
@@ -425,7 +479,7 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                     	addDelay(resultList, scheduleStart, scheduleEnd);
                     }
                     
-                    if(doneEnd.isBefore(scheduleEnd) && nextDoneStart.equals(scheduleEnd)) {
+                    if(doneEnd.isBefore(scheduleEnd) && (doneEnd.isAfter(scheduleStart) || doneEnd.equals(scheduleStart)) && nextDoneStart.equals(scheduleEnd)) {
                     	addDelay(resultList, doneEnd, scheduleEnd);
                     }
 
@@ -443,6 +497,14 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                                 addDelay(resultList, nextScheduleStart, nextDoneStart);
                             }
                         }
+                        
+                        if(nextScheduleStart.isBefore(nextDoneStart) && nextScheduleStart.isAfter(doneEnd)) {
+                        	addDelay(resultList, nextScheduleStart, nextDoneStart);
+                        }
+                        
+                        if(doneEnd.isBefore(nextScheduleEnd) && nextDoneStart.isBefore(nextScheduleEnd) && doneEnd.isAfter(nextScheduleStart)) {
+                        	addDelay(resultList, doneEnd, nextDoneStart);
+                        }
 
                         if ((i + 2 < workScheduleStartList.size())) {
                             Map<String, Object> nextNextStartSchedule = workScheduleStartList.get(i + 2);
@@ -454,6 +516,10 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                             if(nextNextScheduleStart.equals(nextDoneEnd)) {
                                 addDelay(resultList, nextDoneEnd, nextNextScheduleEnd);
                             }
+                            
+                            if(nextDoneStart.isAfter(nextNextScheduleStart)) {
+                            	addDelay(resultList, nextNextScheduleStart, nextDoneStart);
+                            }
                         }
                     }
 
@@ -461,7 +527,9 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                         if ((j + 2 < workDoneStartList.size())) {
                             Map<String, Object> nextNextStartDone = workDoneStartList.get(j + 2);
                             LocalDateTime nextNextDoneStart = (LocalDateTime) nextNextStartDone.get("dateTime");
-                            addDelay(resultList, nextDoneEnd, nextNextDoneStart);
+                            if(nextNextDoneStart.isBefore(scheduleEnd) && nextNextDoneStart.isAfter(scheduleStart)) {
+                            	addDelay(resultList, nextDoneEnd, nextNextDoneStart);
+                            }
                         } else {
                             addDelay(resultList, nextDoneEnd, nextDoneStart);
                         }
@@ -469,7 +537,7 @@ public class WorktimeCalculatorServlet extends HttpServlet {
                 }
 
                 j++;
-                if (i < workScheduleStartList.size() - 1) {
+                if (i < workScheduleStartList.size() - 1 && (doneEnd.isAfter(scheduleEnd) || doneEnd.equals(scheduleEnd))) {
                     i++;
                 }
             }
@@ -488,6 +556,25 @@ public class WorktimeCalculatorServlet extends HttpServlet {
 
                 LocalDateTime doneStart = (LocalDateTime) startDone.get("dateTime");
                 LocalDateTime doneEnd = (LocalDateTime) endDone.get("dateTime");
+
+                if(isOvernightShift) {
+                    boolean isSameDayStart = doneStart.minusHours(12).isBefore(scheduleStart) && doneStart.plusHours(12).isAfter(scheduleStart);
+                    boolean isSameDayEnd = doneEnd.minusHours(12).isBefore(scheduleEnd) && doneEnd.plusHours(12).isAfter(scheduleEnd);
+                    if(!isSameDayStart) {
+                        doneStart = doneStart.plusDays(1);
+                    }
+                    if(!isSameDayEnd) {
+                        doneEnd = doneEnd.plusDays(1);
+                    }
+                }
+                
+                if(doneStart.isAfter(scheduleStart)) {
+                	if(scheduleEnd.isBefore(doneStart)) {
+                		addDelay(resultList, scheduleStart, scheduleEnd);
+                	} else {
+                		addDelay(resultList, scheduleStart, doneStart);
+                	}
+                }
 
                 if(doneEnd.isBefore(scheduleStart)) {
                     addDelay(resultList, scheduleStart, scheduleEnd);
